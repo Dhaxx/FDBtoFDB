@@ -8,8 +8,9 @@ import (
 
 func Cadunimedida(cnx_dest *sql.DB) {
 	cnx_dest.Exec("DELETE FROM CADUNIMEDIDA")
+	Cnx, _ := conexao.Conexao()
 	
-	rows, err := conexao.Cnx.Query("SELECT sigla, descricao FROM CADUNIMEDIDA")
+	rows, err := Cnx.Query("SELECT sigla, descricao FROM CADUNIMEDIDA")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -41,13 +42,15 @@ func GrupoSubgrupo(cnx_dest *sql.DB) {
 	cnx_dest.Exec("DELETE FROM CADGRUPO")
 	cnx_dest.Exec("DELETE FROM CADSUBGR")
 
-	grupos, err := conexao.Cnx.Query("SELECT grupo, nome, ocultar FROM CADGRUPO")
+	Cnx, _ := conexao.Conexao()
+
+	grupos, err := Cnx.Query("SELECT grupo, nome, ocultar FROM CADGRUPO")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	subgrupos, err := conexao.Cnx.Query("SELECT grupo, subgrupo, nome, ocultar FROM CADSUBGR")
+	subgrupos, err := Cnx.Query("SELECT grupo, subgrupo, nome, ocultar FROM CADSUBGR")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -98,7 +101,10 @@ func GrupoSubgrupo(cnx_dest *sql.DB) {
 
 func Cadest(cnx_dest *sql.DB) {
 	cnx_dest.Exec("DELETE FROM CADEST")
-	rows, err := conexao.Cnx.Query(`select cadpro, grupo, subgrupo, codigo, disc1, tipopro, unid1, discr1, codreduz, ocultar, substring(dtainsere from 1 for 10) dtainsere from cadest`)
+
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select cadpro, grupo, subgrupo, codigo, disc1, tipopro, unid1, discr1, codreduz, ocultar, substring(dtainsere from 1 for 10) dtainsere from cadest`)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -133,7 +139,10 @@ func Cadest(cnx_dest *sql.DB) {
 
 func Destino(cnx_dest *sql.DB) {
 	cnx_dest.Exec("DELETE FROM DESTINO")
-	rows, err := conexao.Cnx.Query(`select COD, DESTI, EMPRESA from destino`)
+
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select COD, DESTI, EMPRESA from destino`)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -169,7 +178,10 @@ func Destino(cnx_dest *sql.DB) {
 
 func CentroCusto(cnx_dest *sql.DB) {
 	cnx_dest.Exec("DELETE FROM CENTROCUSTO")
-	rows, err := conexao.Cnx.Query(`select poder, orgao, destino, ccusto, descr, obs, placa, codccusto, empresa, unidade, ocultar from centrocusto`)
+
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select poder, orgao, destino, ccusto, descr, obs, placa, codccusto, empresa, unidade, ocultar from centrocusto`)
 	if err != nil {
 		fmt.Println(err)
 		return

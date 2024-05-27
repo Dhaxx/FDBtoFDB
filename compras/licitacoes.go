@@ -1,8 +1,8 @@
 package compras
 
 import (
-	"fmt"
 	"database/sql"
+	"fmt"
 	"FDBtoFDB/conexao"
 )
 
@@ -42,19 +42,22 @@ func Cadlic(ano int, cnx_dest *sql.DB) {
 					processo,
 					codtce,
 					dtenvio_tce,
-					enviotce)
+					enviotce, 
+					mascmod)
 				VALUES(?,?,?,?,?,
 					?,?,?,?,?,
 					?,?,?,?,?,
 					?,?,?,?,?,
 					?,?,?,?,?,
-					?,?,?,?,?,?,?,?,?)`)
+					?,?,?,?,?,?,?,?,?,?)`)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	rows, err := conexao.Cnx.Query(`select numpro,
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select numpro,
 										substring(datae from 1 for 10) datae,
 										substring(dtpub from 1 for 10) dtpub,
 										substring(dtenc from 1 for 10) dtenc,
@@ -87,32 +90,36 @@ func Cadlic(ano int, cnx_dest *sql.DB) {
 										processo,
 										codtce,
 										dtenvio_tce,
-										enviotce from cadlic where ano <= ?`, ano)
+										enviotce,
+										mascmod from cadlic where ano <= ?`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
-		var numpro, datae, dtpub, dtenc, horabe, discr, discr7, modlic, dthom, dtadj, comp, numero, ano, registropreco, ctlance, obra, proclic, numlic, liberacompra, microempresa, licnova, tlance, mult_entidade, processo_ano, LEI_INVERTFASESTCE, codmod, empresa, valor, detalhe, anomod, processo, codtce, dtenvio_tce, enviotce sql.NullString
-		err = rows.Scan(&numpro, &datae, &dtpub, &dtenc, &horabe, &discr, &discr7, &modlic, &dthom, &dtadj, &comp, &numero, &ano, &registropreco, &ctlance, &obra, &proclic, &numlic, &liberacompra, &microempresa, &licnova, &tlance, &mult_entidade, &processo_ano, &LEI_INVERTFASESTCE, &codmod, &empresa, &valor, &detalhe, &anomod, &processo, &codtce, &dtenvio_tce, &enviotce)
+		var numpro, datae, dtpub, dtenc, horabe, discr, discr7, modlic, dthom, dtadj, comp, numero, ano, registropreco, ctlance, obra, proclic, numlic, liberacompra, microempresa, licnova, tlance, mult_entidade, processo_ano, LEI_INVERTFASESTCE, codmod, empresa, valor, detalhe, anomod, processo, codtce, dtenvio_tce, enviotce, mascmod sql.NullString
+		err = rows.Scan(&numpro, &datae, &dtpub, &dtenc, &horabe, &discr, &discr7, &modlic, &dthom, &dtadj, &comp, &numero, &ano, &registropreco, &ctlance, &obra, &proclic, &numlic, &liberacompra, &microempresa, &licnova, &tlance, &mult_entidade, &processo_ano, &LEI_INVERTFASESTCE, &codmod, &empresa, &valor, &detalhe, &anomod, &processo, &codtce, &dtenvio_tce, &enviotce, &mascmod)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		_, err = insert.Exec(numpro, datae, dtpub, dtenc, horabe, discr, discr7, modlic, dthom, dtadj, comp, numero, ano, registropreco, ctlance, obra, proclic, numlic, liberacompra, microempresa, licnova, tlance, mult_entidade, processo_ano, LEI_INVERTFASESTCE, codmod, empresa, valor, detalhe, anomod, processo, codtce, dtenvio_tce, enviotce)
+		_, err = insert.Exec(numpro, datae, dtpub, dtenc, horabe, discr, discr7, modlic, dthom, dtadj, comp, numero, ano, registropreco, ctlance, obra, proclic, numlic, liberacompra, microempresa, licnova, tlance, mult_entidade, processo_ano, LEI_INVERTFASESTCE, codmod, empresa, valor, detalhe, anomod, processo, codtce, dtenvio_tce, enviotce, mascmod)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 	}
+	cnx_dest.Exec(`INSERT INTO CADLIC_SESSAO (NUMLIC, SESSAO, DTREAL, HORREAL, COMP, DTENC, HORENC, SESSAOPARA, MOTIVO) 
+				   SELECT L.NUMLIC, CAST(1 AS INTEGER), L.DTREAL, L.HORREAL, L.COMP, L.DTENC, L.HORENC, CAST('T' AS VARCHAR(1)), CAST('O' AS VARCHAR(1)) 
+				   FROM CADLIC L where NOT EXISTS (SELECT 1 FROM CADLIC_SESSAO S WHERE S.NUMLIC = L.NUMLIC);`)
 	err = tx.Commit()
 	if err != nil {
 		fmt.Println(err)
 		return
-	}	
+	}
 }
 
 func Cadprolic(ano int, cnx_dest *sql.DB) {
@@ -125,13 +132,15 @@ func Cadprolic(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	rows, err := conexao.Cnx.Query(`select item, item_mask, numorc, cadpro, quan1, vamed1, vatomed1, codccusto, reduz, numlic, microempresa, tlance, item_ag, id_cadorc from cadprolic where numlic in (select numlic from cadlic where ano <= ?)`, ano)
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select item, item_mask, numorc, cadpro, quan1, vamed1, vatomed1, codccusto, reduz, numlic, microempresa, tlance, item_ag, id_cadorc from cadprolic where numlic in (select numlic from cadlic where ano <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var item, item_mask, numorc, cadpro, quan1, vamed1, vatomed1, codccusto, reduz, numlic, microempresa, tlance, item_ag, id_cadorc sql.NullString
 		err = rows.Scan(&item, &item_mask, &numorc, &cadpro, &quan1, &vamed1, &vatomed1, &codccusto, &reduz, &numlic, &microempresa, &tlance, &item_ag, &id_cadorc)
@@ -162,13 +171,15 @@ func Cadprolic_detalhe(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	rows, err := conexao.Cnx.Query(`select NUMLIC,item,CADPRO,quan1,VAMED1,VATOMED1,marca,CODCCUSTO,ITEM_CADPROLIC from cadprolic_detalhe where NUMLIC in (select numlic from cadlic where ano <= ?)`, ano)
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select NUMLIC,item,CADPRO,quan1,VAMED1,VATOMED1,marca,CODCCUSTO,ITEM_CADPROLIC from cadprolic_detalhe where NUMLIC in (select numlic from cadlic where ano <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var NUMLIC, item, CADPRO, quan1, VAMED1, VATOMED1, marca, CODCCUSTO, ITEM_CADPROLIC sql.NullString
 		err = rows.Scan(&NUMLIC, &item, &CADPRO, &quan1, &VAMED1, &VATOMED1, &marca, &CODCCUSTO, &ITEM_CADPROLIC)
@@ -192,7 +203,7 @@ func Cadprolic_detalhe(ano int, cnx_dest *sql.DB) {
 
 func ProlicProlics(ano int, cnx_dest *sql.DB) {
 	cnx_dest.Exec(`DELETE FROM PROLICS`)
-    cnx_dest.Exec(`DELETE FROM PROLIC`)
+	cnx_dest.Exec(`DELETE FROM PROLIC`)
 
 	insert_prolic, err := cnx_dest.Prepare(`insert into PROLIC (codif, nome, status, numlic) VALUES (?, ?, ?, ?)`)
 	if err != nil {
@@ -206,19 +217,21 @@ func ProlicProlics(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	prolic, err := conexao.Cnx.Query(`select codif, nome, status, numlic from prolic where numlic in (select numlic from cadlic where ano <= ?)`, ano)
+	Cnx, _ := conexao.Conexao()
+
+	prolic, err := Cnx.Query(`select codif, nome, status, numlic from prolic where numlic in (select numlic from cadlic where ano <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	prolics, err := conexao.Cnx.Query(`select sessao, codif, status, representante, numlic, usa_preferencia from prolics where numlic in (select numlic from cadlic where ano <= ?)`, ano)
+	prolics, err := Cnx.Query(`select sessao, codif, status, representante, numlic, usa_preferencia from prolics where numlic in (select numlic from cadlic where ano <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	tx_prolic,_ := cnx_dest.Begin()
+	tx_prolic, _ := cnx_dest.Begin()
 	for prolic.Next() {
 		var codif, nome, status, numlic sql.NullString
 		err = prolic.Scan(&codif, &nome, &status, &numlic)
@@ -249,6 +262,9 @@ func ProlicProlics(ano int, cnx_dest *sql.DB) {
 		}
 	}
 
+	cnx_dest.Exec(`insert into cadpro_status (numlic, sessao, itemp, item, telafinal) 
+					SELECT b.NUMLIC, 1 sessao, item, item, 'I_ENCERRAMENTO' FROM CADPROLIC a JOIN cadlic b ON a.NUMLIC = b.NUMLIC)`)
+
 	err = tx_prolic.Commit()
 	if err != nil {
 		fmt.Println(err)
@@ -265,13 +281,15 @@ func Cadpro_status(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	rows, err := conexao.Cnx.Query(`select numlic, sessao, itemp, item from cadpro_status where numlic in (select numlic from cadlic where ano <= ?)`, ano)
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select numlic, sessao, itemp, item from cadpro_status where numlic in (select numlic from cadlic where ano <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var numlic, sessao, itemp, item sql.NullString
 		err = rows.Scan(&numlic, &sessao, &itemp, &item)
@@ -302,13 +320,15 @@ func Cadpro_proposta(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	rows, err := conexao.Cnx.Query(`select codif, sessao, numlic, itemp, item, quan1, vaun1, vato1, status, marca, subem from cadpro_proposta where numlic in (select numlic from cadlic where ano <= ?)`, ano)
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select codif, sessao, numlic, itemp, item, quan1, vaun1, vato1, status, marca, subem from cadpro_proposta where numlic in (select numlic from cadlic where ano <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var codif, sessao, numlic, itemp, item, quan1, vaun1, vato1, status, marca, subem sql.NullString
 		err = rows.Scan(&codif, &sessao, &numlic, &itemp, &item, &quan1, &vaun1, &vato1, &status, &marca, &subem)
@@ -339,13 +359,15 @@ func Cadpro_lance(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	rows, err := conexao.Cnx.Query(`select sessao, rodada, codif, itemp, vaunl, vatol, status, subem, numlic from cadpro_lance where numlic in (select numlic from cadlic where ano <= ?)`, ano)
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select sessao, rodada, codif, itemp, vaunl, vatol, status, subem, numlic from cadpro_lance where numlic in (select numlic from cadlic where ano <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var sessao, rodada, codif, itemp, vaunl, vatol, status, subem, numlic sql.NullString
 		err = rows.Scan(&sessao, &rodada, &codif, &itemp, &vaunl, &vatol, &status, &subem, &numlic)
@@ -376,13 +398,15 @@ func Cadpro_final(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	rows, err := conexao.Cnx.Query(`SELECT NUMLIC, ULT_SESSAO, codif, itemp, VAUNF, vatof, STATUS, subem FROM CADPRO_FINAL WHERE NUMLIC IN (SELECT NUMLIC FROM CADLIC WHERE ANO <= ?)`, ano)
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`SELECT NUMLIC, ULT_SESSAO, codif, itemp, VAUNF, vatof, STATUS, subem FROM CADPRO_FINAL WHERE NUMLIC IN (SELECT NUMLIC FROM CADLIC WHERE ANO <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var NUMLIC, ULT_SESSAO, codif, itemp, VAUNF, vatof, STATUS, subem sql.NullString
 		err = rows.Scan(&NUMLIC, &ULT_SESSAO, &codif, &itemp, &VAUNF, &vatof, &STATUS, &subem)
@@ -440,7 +464,9 @@ func Cadpro(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	rows, err := conexao.Cnx.Query(`select CODIF,
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select CODIF,
 											CADPRO,
 											QUAN1,
 											VAUN1,
@@ -473,11 +499,11 @@ func Cadpro(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var CODIF, CADPRO, QUAN1, VAUN1, VATO1, SUBEM, STATUS, ITEM, NUMORC, ITEMORCPED, CODCCUSTO, FICHA, ELEMENTO, DESDOBRO, NUMLIC, ULT_SESSAO, ITEMP, QTDADT, QTDPED, VAUNADT, VATOADT, PERC, QTDSOL, ID_CADORC, VATOPED, VATOSOL, TPCONTROLE_SALDO, MARCA sql.NullString
-		err = rows.Scan(&CODIF, &CADPRO, &QUAN1, &VAUN1, &VATO1, &SUBEM, &STATUS, &ITEM, &NUMORC, &ITEMORCPED, &CODCCUSTO, &FICHA, &ELEMENTO, &DESDOBRO, &NUMLIC, 
-						&ULT_SESSAO, &ITEMP, &QTDADT, &QTDPED, &VAUNADT, &VATOADT, &PERC, &QTDSOL, &ID_CADORC, &VATOPED, &VATOSOL, &TPCONTROLE_SALDO, &MARCA)
+		err = rows.Scan(&CODIF, &CADPRO, &QUAN1, &VAUN1, &VATO1, &SUBEM, &STATUS, &ITEM, &NUMORC, &ITEMORCPED, &CODCCUSTO, &FICHA, &ELEMENTO, &DESDOBRO, &NUMLIC,
+			&ULT_SESSAO, &ITEMP, &QTDADT, &QTDPED, &VAUNADT, &VATOADT, &PERC, &QTDSOL, &ID_CADORC, &VATOPED, &VATOSOL, &TPCONTROLE_SALDO, &MARCA)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -505,7 +531,9 @@ func Regpreco(ano int, cnx_dest *sql.DB) {
 	cnx_dest.Exec(`DELETE FROM REGPRECOHIS`)
 	cnx_dest.Exec(`DELETE FROM REGPRECO`)
 
-	regprecodoc, err := conexao.Cnx.Query(`select NUMLIC, CODATUALIZACAO, DTPRAZO, ULTIMA from regprecodoc where numlic in (select numlic from cadlic where ano <= ?)`, ano)
+	Cnx, _ := conexao.Conexao()
+
+	regprecodoc, err := Cnx.Query(`select NUMLIC, CODATUALIZACAO, DTPRAZO, ULTIMA from regprecodoc where numlic in (select numlic from cadlic where ano <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -517,7 +545,7 @@ func Regpreco(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	regpreco, err := conexao.Cnx.Query(`select COD, DTPRAZO, NUMLIC, CODIF, CADPRO, CODCCUSTO, ITEM, CODATUALIZACAO, QUAN1, VAUN1, VATO1, QTDENT, SUBEM, STATUS, ULTIMA from regpreco where numlic in (select numlic from cadlic where ano <= ?)`, ano)
+	regpreco, err := Cnx.Query(`select COD, DTPRAZO, NUMLIC, CODIF, CADPRO, CODCCUSTO, ITEM, CODATUALIZACAO, QUAN1, VAUN1, VATO1, QTDENT, SUBEM, STATUS, ULTIMA from regpreco where numlic in (select numlic from cadlic where ano <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -529,7 +557,7 @@ func Regpreco(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	regprecohis, err := conexao.Cnx.Query(`select NUMLIC, CODIF, CADPRO, CODCCUSTO, ITEM, CODATUALIZACAO, QUAN1, VAUN1, VATO1, SUBEM, STATUS, MOTIVO, MARCA, NUMORC, ULTIMA from regprecohis where numlic in (select numlic from cadlic where ano <= ?)`, ano)
+	regprecohis, err := Cnx.Query(`select NUMLIC, CODIF, CADPRO, CODCCUSTO, ITEM, CODATUALIZACAO, QUAN1, VAUN1, VATO1, SUBEM, STATUS, MOTIVO, MARCA, NUMORC, ULTIMA from regprecohis where numlic in (select numlic from cadlic where ano <= ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -541,7 +569,7 @@ func Regpreco(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	tx_regprecodoc,_ := cnx_dest.Begin()
+	tx_regprecodoc, _ := cnx_dest.Begin()
 	for regprecodoc.Next() {
 		var NUMLIC, CODATUALIZACAO, DTPRAZO, ULTIMA sql.NullString
 		err = regprecodoc.Scan(&NUMLIC, &CODATUALIZACAO, &DTPRAZO, &ULTIMA)
@@ -562,7 +590,7 @@ func Regpreco(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	tx_regpreco,_ := cnx_dest.Begin()
+	tx_regpreco, _ := cnx_dest.Begin()
 	for regpreco.Next() {
 		var COD, DTPRAZO, NUMLIC, CODIF, CADPRO, CODCCUSTO, ITEM, CODATUALIZACAO, QUAN1, VAUN1, VATO1, QTDENT, SUBEM, STATUS, ULTIMA sql.NullString
 		err = regpreco.Scan(&COD, &DTPRAZO, &NUMLIC, &CODIF, &CADPRO, &CODCCUSTO, &ITEM, &CODATUALIZACAO, &QUAN1, &VAUN1, &VATO1, &QTDENT, &SUBEM, &STATUS, &ULTIMA)
@@ -583,7 +611,7 @@ func Regpreco(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	tx_regprecohis,_ := cnx_dest.Begin()
+	tx_regprecohis, _ := cnx_dest.Begin()
 	for regprecohis.Next() {
 		var NUMLIC, CODIF, CADPRO, CODCCUSTO, ITEM, CODATUALIZACAO, QUAN1, VAUN1, VATO1, SUBEM, STATUS, MOTIVO, MARCA, NUMORC, ULTIMA sql.NullString
 		err = regprecohis.Scan(&NUMLIC, &CODIF, &CADPRO, &CODCCUSTO, &ITEM, &CODATUALIZACAO, &QUAN1, &VAUN1, &VATO1, &SUBEM, &STATUS, &MOTIVO, &MARCA, &NUMORC, &ULTIMA)
@@ -607,4 +635,28 @@ func Regpreco(ano int, cnx_dest *sql.DB) {
 	cnx_dest.Exec(`insert into cadprolic_detalhe_fic (numlic, item, codigo, qtd, valor, qtdadt, valoradt, codccusto, qtdmed, valormed, tipo)
 					select numlic, item, '0', quan1, vato1, quan1, vato1, codccusto, quan1, vato1, 'C' from regpreco where numlic in 
 					(select numlic from cadlic where registropreco='S' and liberacompra='S') and subem=1;`)
+}
+
+
+func LimpaLics(cnx_dest *sql.DB) {
+	tx, _ := cnx_dest.Begin()
+	cnx_dest.Exec("DELETE FROM REGPRECOHIS")
+	cnx_dest.Exec("DELETE FROM REGPRECO")
+	cnx_dest.Exec("DELETE FROM REGPRECODOC")
+	cnx_dest.Exec("DELETE FROM CADPROLIC_DETALHE_FIC")
+	cnx_dest.Exec("DELETE FROM CADPRO")
+	cnx_dest.Exec("DELETE FROM CADPRO_FINAL")
+	cnx_dest.Exec("DELETE FROM CADPRO_LANCE")
+	cnx_dest.Exec("DELETE FROM CADPRO_PROPOSTA")
+	cnx_dest.Exec("DELETE FROM CADPRO_STATUS")
+	cnx_dest.Exec("DELETE FROM PROLICS")
+	cnx_dest.Exec("DELETE FROM PROLIC")
+	cnx_dest.Exec("DELETE FROM CADPROLIC_DETALHE")
+	cnx_dest.Exec("DELETE FROM CADPROLIC")
+	cnx_dest.Exec("DELETE FROM CADLIC")
+
+	err := tx.Commit()
+	if err != nil {
+		panic(err)
+	}
 }

@@ -1,15 +1,16 @@
 package compras
 
 import (
-	"fmt"
 	"database/sql"
+	"fmt"
 	"FDBtoFDB/conexao"
 )
 
 func Cadorc(ano int, cnx_dest *sql.DB) {
 	cnx_dest.Exec("DELETE FROM ICADORC")
 	cnx_dest.Exec("DELETE FROM CADORC")
-	rows, err := conexao.Cnx.Query(`select id_cadorc, num, ano, numorc, dtorc, descr, prioridade, obs, status, liberado, codccusto, liberado_tela, empresa, registropreco, numlic, proclic from cadorc where ano = ?`, ano)
+	Cnx, _ := conexao.Conexao()
+	rows, err := Cnx.Query(`select id_cadorc, num, ano, numorc, dtorc, descr, prioridade, obs, status, liberado, codccusto, liberado_tela, empresa, registropreco, numlic, proclic from cadorc where ano = ?`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -21,7 +22,7 @@ func Cadorc(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var id_cadorc, num, ano, numorc, descr, prioridade, obs, status, liberado, codccusto, liberado_tela, empresa, registropreco, numlic, proclic sql.NullString
 		var dtorc sql.NullTime
@@ -44,8 +45,9 @@ func Cadorc(ano int, cnx_dest *sql.DB) {
 	}
 }
 
-func Icadorc (ano int, cnx_dest *sql.DB) {
-	rows, err := conexao.Cnx.Query(`select numorc, item, cadpro, qtd, valor, itemorc, codccusto, itemorc_ag, id_cadorc from icadorc where id_cadorc in (select id_cadorc from cadorc where ano = ?)`, ano)
+func Icadorc(ano int, cnx_dest *sql.DB) {
+	Cnx, _ := conexao.Conexao()
+	rows, err := Cnx.Query(`select numorc, item, cadpro, qtd, valor, itemorc, codccusto, itemorc_ag, id_cadorc from icadorc where id_cadorc in (select id_cadorc from cadorc where ano = ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -57,8 +59,7 @@ func Icadorc (ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var numorc, item, cadpro, itemorc, codccusto, itemorc_ag, id_cadorc sql.NullString
 		var qtd, valor sql.NullFloat64
@@ -88,13 +89,15 @@ func Fcadorc(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	rows, err := conexao.Cnx.Query(`select numorc, codif, nome, valorc, id_cadorc from fcadorc where id_cadorc in (select id_cadorc from cadorc where ano = ?)`, ano)
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select numorc, codif, nome, valorc, id_cadorc from fcadorc where id_cadorc in (select id_cadorc from cadorc where ano = ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var numorc, codif, nome, id_cadorc sql.NullString
 		var valorc sql.NullFloat64
@@ -124,13 +127,15 @@ func Vcadorc(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	rows, err := conexao.Cnx.Query(`select numorc, codif, vlruni, vlrtot, item, id_cadorc, classe, ganhou, vlrganhou from vcadorc where id_cadorc in (select id_cadorc from cadorc where ano = ?)`, ano)
+	Cnx, _ := conexao.Conexao()
+
+	rows, err := Cnx.Query(`select numorc, codif, vlruni, vlrtot, item, id_cadorc, classe, ganhou, vlrganhou from vcadorc where id_cadorc in (select id_cadorc from cadorc where ano = ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var numorc, codif, item, id_cadorc, classe, ganhou sql.NullString
 		var vlruni, vlrtot, vlrganhou sql.NullFloat64
@@ -155,7 +160,8 @@ func Vcadorc(ano int, cnx_dest *sql.DB) {
 
 func Icadorc_cot(ano int, cnx_dest *sql.DB) {
 	cnx_dest.Exec("DELETE FROM ICADORC_COT")
-	rows, err := conexao.Cnx.Query(`select numorc, item, codif, tipo, qtd, valunt, valtot, qtdped, id_cadorc, flg_aceito, flg_alt_user from icadorc_cot where id_cadorc in (select id_cadorc from cadorc where ano = ?)`, ano) 
+	Cnx, _ := conexao.Conexao()
+	rows, err := Cnx.Query(`select numorc, item, codif, tipo, qtd, valunt, valtot, qtdped, id_cadorc, flg_aceito, flg_alt_user from icadorc_cot where id_cadorc in (select id_cadorc from cadorc where ano = ?)`, ano)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -167,7 +173,7 @@ func Icadorc_cot(ano int, cnx_dest *sql.DB) {
 		return
 	}
 
-	tx,_ := cnx_dest.Begin()
+	tx, _ := cnx_dest.Begin()
 	for rows.Next() {
 		var numorc, item, codif, tipo, id_cadorc, flg_aceito, flg_alt_user sql.NullString
 		var qtd, valunt, valtot, qtdped sql.NullFloat64
